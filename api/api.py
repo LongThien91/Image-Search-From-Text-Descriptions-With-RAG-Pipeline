@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Form, File, UploadFile
-from vectorDatabase.manage_collection import get_collection, create_collection,remove_collection
+from vectorDatabase.manage_collection import get_collection, create_collection,remove_collection,is_collection_available
 from vectorDatabase.embedding import add_img_to_collection
 import os
 import shutil
@@ -11,7 +11,7 @@ app = FastAPI()
 
 @app.get("/") 
 async def read_root():
-    return {"message": "Hãy truy cập http://127.0.0.1:8000/docs để sử dụng endpoint của project"}
+    return {"message": "Hãy truy cập http://127.0.0.1:8000/docs để sử dụng api của project"}
 
 @app.get("/get_collections") 
 async def get_collections():
@@ -44,13 +44,16 @@ async def remove_collections(collection_name: str = Form(...)):
         raise HTTPException(status_code=500, detail="False to remove collection")
 @app.post("/add_by_file")
 async def add_by_file(collection_name: str = Form(...), file: UploadFile = File(...)):
+
+    if is_collection_available(collection_name)==0:
+        return f"Collection {collection_name} is not available"
     UPLOAD_DIR = "uploads"
     if os.path.exists(UPLOAD_DIR):
         shutil.rmtree(UPLOAD_DIR)
     os.makedirs(UPLOAD_DIR, exist_ok=True)
     destination_path = os.path.join(UPLOAD_DIR, file.filename)
     try:
-        if not destination_path.endswith(('.jpg', '.jpeg', '.png','.WebP')):
+        if not destination_path.lower().endswith(('.jpg', '.jpeg', '.png','.webp')):
             raise ValueError("Unsupported file format. Only .jpg, .jpeg, .png, .webp are allowed.")
         
         with open(destination_path, "wb") as buffer:
@@ -58,6 +61,9 @@ async def add_by_file(collection_name: str = Form(...), file: UploadFile = File(
             
         add_img_to_collection(destination_path,collection_name)
         print(f"File saved to: {destination_path}")
+        
+        if os.path.exists(UPLOAD_DIR):
+            shutil.rmtree(UPLOAD_DIR)
         return  {f"File saved successfully"}
     except Exception as e:
         print(f"Error saving file: {e}")
@@ -66,18 +72,18 @@ async def add_by_file(collection_name: str = Form(...), file: UploadFile = File(
 
 @app.post("/add_by_zip")
 async def add_by_zip(collection_name: str = Form(...), zip_file: UploadFile = File(...)):
+    if is_collection_available(collection_name)==0:
+        return "Collection not available"
     UPLOAD_DIR = "uploads"
-    TEMP_EXTRACT_DIR = f"temp_extract_{uuid.uuid4().hex}"
-    print(1)
     if os.path.exists(UPLOAD_DIR):
         shutil.rmtree(UPLOAD_DIR)
+    TEMP_EXTRACT_DIR = f"temp_extract_{uuid.uuid4().hex}"
     os.makedirs(UPLOAD_DIR, exist_ok=True)
 
     # Tạo thư mục tạm để giải nén
     os.makedirs(TEMP_EXTRACT_DIR, exist_ok=True)
 
     zip_path = os.path.join(TEMP_EXTRACT_DIR, zip_file.filename)
-    print(2)
     try:
         # Lưu file zip
         with open(zip_path, "wb") as buffer:
@@ -97,14 +103,15 @@ async def add_by_zip(collection_name: str = Form(...), zip_file: UploadFile = Fi
                 try:
                     add_img_to_collection(dst_path, collection_name)
                 except Exception as e:
-                    print(e)
-
+                        print(e)
+        if os.path.exists(UPLOAD_DIR):
+            shutil.rmtree(UPLOAD_DIR)
+        return "File đã được thêm thành công"
 
     except Exception as e:
         print(f"Error handling zip file: {e}")
         raise HTTPException(status_code=500, detail="Error processing zip file.")
 
     finally:
-        # Dọn dẹp thư mục tạm (không xóa uploads/)
         if os.path.exists(TEMP_EXTRACT_DIR):
             shutil.rmtree(TEMP_EXTRACT_DIR)

@@ -6,7 +6,7 @@ import os
 import re
 import uuid
 from dotenv import load_dotenv
-from GenerateImageDes.Gemini_Image_description import CheckImageDescriber
+from GenerateImageDes.Gemini_Image_description_for_clothes import CheckImageDescriber
 from cloudinary.utils import cloudinary_url
 import cloudinary.uploader
 
