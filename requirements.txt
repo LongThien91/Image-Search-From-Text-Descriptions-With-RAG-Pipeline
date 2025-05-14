@@ -1,0 +1,15 @@
+dotenv==0.9.9
+langchain_community==0.3.19
+langchain_qdrant==0.2.0
+transformers==4.49.0
+langchain_google_genai==2.1.0
+langchain_huggingface==0.1.2
+sentence_transformers==3.4.1
+fastapi==0.115.11
+uvicorn==0.34.0
+pandas==2.2.3
+cloudinary==1.44.0
+matplotlib==3.10.3
+requests==2.32.3
+pillow==11.2.1
+python-multipart==0.0.20
