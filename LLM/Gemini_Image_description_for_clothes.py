@@ -23,7 +23,7 @@ class CheckImageDescriber:
             "type": "text",
             "text": (
                 """
-            Hãy mô tả hình ảnh này một cách ngắn gọn và chính xác, chỉ tập trung vào các đặc điểm liên quan đến **quần áo** xuất hiện trong ảnh.
+            Hãy mô tả hình ảnh này một cách ngắn gọn và chính xác, chỉ tập trung vào các đặc điểm liên quan đến **quần áo** xuất hiện trong ảnh, ngoài màu sắc chủ yếu của quần áo, không nói thêm màu sắc nào khác như màu logo, màu sắc của hình in,....
 
             Yêu cầu mô tả:
             - Loại quần áo (áo thun, áo khoác, váy, quần jean, v.v.).
@@ -33,8 +33,8 @@ class CheckImageDescriber:
             - Có logo hoặc chữ không? Ghi rõ nội dung nếu thấy rõ.
 
             Chỉ mô tả các yếu tố liên quan đến quần áo. Bỏ qua khung cảnh, người mẫu, hành động hoặc các vật thể không liên quan.
-            Ví dụ: Áo thun tay ngắn, có màu đỏ và xanh lam, chia đôi theo chiều dọc. Có logo Nike màu vàng ở ngực trái, có logo FC Barcelona và logo Spotify.
-                   Áo khoác dày có hình 2 con chim cánh cụt sau lưng, màu chủ đạo là màu xanh lam, mũ có gắn lông màu trắng, trước áo có logo teelab nhỏ.
+            Ví dụ: Áo thun tay ngắn, có màu đỏ và xanh lam, chia đôi theo chiều dọc. Có logo Nike ở ngực trái, có logo FC Barcelona và logo Spotify.
+                   Áo khoác dày có hình 2 con chim cánh cụt sau lưng, màu chủ đạo là màu xanh lam, mũ có gắn lông, trước áo có logo teelab nhỏ.
             """
                     )
             }
