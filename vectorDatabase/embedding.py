@@ -6,9 +6,10 @@ import os
 import re
 import uuid
 from dotenv import load_dotenv
-from GenerateImageDes.Gemini_Image_description_for_clothes import CheckImageDescriber
+from LLM.Gemini_Image_description_for_clothes import CheckImageDescriber
 from cloudinary.utils import cloudinary_url
 import cloudinary.uploader
+from LLM.api_list_manager import APIKeyManager
 
 
 load_dotenv()
@@ -16,7 +17,9 @@ load_dotenv()
 MODEL_EMBEDDING=os.getenv("MODEL_EMBEDDING")
 qdrant_url = os.getenv("qdrant_url")
 qdrant_apikey = os.getenv("qdrant_apikey")
-GEMINI_API_LIST = os.getenv("GEMINI_API_LIST")
+
+GEMINI_API_LIST = os.getenv('GEMINI_API_LIST').split(',')
+KEY_MANAGER_GEMINI = APIKeyManager(GEMINI_API_LIST)
 GEMINI_MODEL = os.getenv("GEMINI_MODEL")
 
 CLOUD_NAME = os.getenv("CLOUD_NAME")
@@ -29,7 +32,7 @@ cloudinary.config(
   api_secret = CLOUDINARY_API_SECRETKEY
 )
 
-getDescriptionImg = CheckImageDescriber(GEMINI_API_LIST,GEMINI_MODEL)
+getDescriptionImg = CheckImageDescriber(KEY_MANAGER_GEMINI,GEMINI_MODEL)
 
 def embedding(image_description):
     model = SentenceTransformer(MODEL_EMBEDDING)
@@ -39,14 +42,24 @@ def embedding(image_description):
 def add_img_to_collection(img_path, collection_name):
 
     img_description = getDescriptionImg.describe_image(img_path)
-    vector_hlembedding= embedding(img_description) 
-    print(img_description)
+    des_list= img_description.split('---')
+    vector_hlembedding=[]
+
+    for i in range(0,len(des_list)):
+        vector_hlembedding.append(embedding(des_list[i]) )
     new_image_name = str(uuid.uuid4()) #generate id for each image
-    point = PointStruct(id=new_image_name, vector=vector_hlembedding, payload={"image_description": img_description})
-    
+
+    points = [
+    models.PointStruct(
+        id=str(uuid.uuid4()),
+        payload={"image_description": image_description,"id_image":new_image_name,} ,
+        vector=vector_hlembedding[idx],
+    )
+    for idx,image_description in enumerate(des_list)
+]
 
     client = QdrantClient(url=qdrant_url, api_key=qdrant_apikey)
-    client.upsert(collection_name=collection_name, points=[point])
+    client.upsert(collection_name=collection_name, points=points)
     cloudinary.uploader.upload(
         img_path,
         public_id=new_image_name,
