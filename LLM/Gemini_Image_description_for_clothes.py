@@ -47,7 +47,6 @@ class CheckImageDescriber:
 
     def describe_image(self, image_path: str) -> str:
         """Use Gemini to describe the image."""
-        print('1')
         encoded_image = self._load_image_as_base64(image_path)
         messages = self.build_image_description_prompt_for_clothes()
 

@@ -2,7 +2,7 @@ import os
 import re
 from langchain.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
-#from generate.gemini.reset_api import APIKeyManager
+from LLM.api_list_manager import APIKeyManager
 from langchain_core.output_parsers import StrOutputParser
 from api_list_manager import APIKeyManager
 
@@ -27,13 +27,11 @@ class CheckQueryUserchat:
                 (2) áo khoác xanh dương có hình ngọn núi.  
 
                 ### Yêu cầu:
-
-                - Truy vấn của người dùng có thể không đề cập đến toàn bộ mô tả sản phẩm (ví dụ chỉ nói về áo hoặc quần).
                 - Hãy xác định **top {top_k}** mô tả phù hợp nhất với truy vấn, dựa trên mức độ tương đồng về **ý nghĩa** (loại quần áo, màu sắc, họa tiết, hình in, logo, v.v.).
-                - Mỗi truy vấn chỉ cần khớp tốt với **một phần chính** trong mô tả (ví dụ: chỉ áo).
                 - Không được chọn mô tả không liên quan hoặc sai loại đồ (ví dụ người dùng hỏi "áo" thì mô tả chỉ có "quần" là không phù hợp).
                 - **Tuyệt đối chỉ trả về danh sách các `id`** như sau:  
-                `["1", "3"]`  
+                `["0", "2"]`  
+                -Sắp xếp theo thứ tự các số trả về phải có mức độ tương đồng giảm dần, chọn mô tả phù hợp nhất trước.
                 - **Không hỏi lại, không giải thích, không thêm nhận xét hoặc ký tự dư thừa.**
 
                 ### Ví dụ:
@@ -42,13 +40,13 @@ class CheckQueryUserchat:
                 "áo màu đen có hình phi hành gia"  
 
                 Danh sách mô tả:  
-                (1) cái áo màu đen có hình phi hành gia in sau lưng, quần trắng bằng vải  
-                (2) quần màu đen có hình gấu  
-                (3) áo màu đen trước ngực có hình tàu vũ trụ  
-                (4) mũ màu trắng, hình hải quân trong One Piece
+                (0) cái áo màu đen có hình phi hành gia in sau lưng
+                (1) quần màu đen có hình gấu  
+                (2) áo màu đen trước ngực có hình tàu vũ trụ  
+                (3) Áo thun tay ngắn, chất liệu cotton, màu trắng. In hình gấu Lotso và chữ "LOTSO STORY" ở mặt trước. Có logo hình vương miện ở góc dưới bên phải.
 
                 → Kết quả mong muốn (top_k = 2):  
-                `["1", "3"]`
+                `["0", "2"]`
                     """
                 ),
                 (

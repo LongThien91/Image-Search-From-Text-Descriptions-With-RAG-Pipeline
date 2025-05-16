@@ -4,6 +4,7 @@ from vectorDatabase.embedding import add_img_to_collection
 import os
 import shutil
 import os, zipfile, uuid
+import asyncio
 
 # 1. Khởi tạo ứng dụng FastAPI
 app = FastAPI()
@@ -72,12 +73,15 @@ async def add_by_file(collection_name: str = Form(...), file: UploadFile = File(
 
 @app.post("/add_by_zip")
 async def add_by_zip(collection_name: str = Form(...), zip_file: UploadFile = File(...)):
+
     if is_collection_available(collection_name)==0:
         return "Collection not available"
     UPLOAD_DIR = "uploads"
+    TEMP_EXTRACT_DIR = f"extract_dir"
     if os.path.exists(UPLOAD_DIR):
         shutil.rmtree(UPLOAD_DIR)
-    TEMP_EXTRACT_DIR = f"temp_extract_{uuid.uuid4().hex}"
+    if os.path.exists(TEMP_EXTRACT_DIR):
+        shutil.rmtree(TEMP_EXTRACT_DIR)
     os.makedirs(UPLOAD_DIR, exist_ok=True)
 
     # Tạo thư mục tạm để giải nén
@@ -92,16 +96,17 @@ async def add_by_zip(collection_name: str = Form(...), zip_file: UploadFile = Fi
         # Giải nén file zip
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(TEMP_EXTRACT_DIR)
-
         for filename in os.listdir(TEMP_EXTRACT_DIR):
+            print('process', filename)
             full_path = os.path.join(TEMP_EXTRACT_DIR, filename)
     
             if os.path.isfile(full_path) and filename.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
                 dst_path = os.path.join(UPLOAD_DIR, filename)
                 shutil.move(full_path, dst_path)
-
+                
                 try:
                     add_img_to_collection(dst_path, collection_name)
+                    #asyncio.sleep(1.5)
                 except Exception as e:
                         print(e)
         if os.path.exists(UPLOAD_DIR):
