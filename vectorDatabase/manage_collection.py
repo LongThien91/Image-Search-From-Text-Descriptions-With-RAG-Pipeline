@@ -60,10 +60,10 @@ def get_all_id_in_collection(collection_name : str):
                 collection_name=collection_name,
                 limit=100000,            
                 offset=offset,
-                with_payload=False,   
+                with_payload=True,
                 with_vectors=False    
             )
-            all_ids.extend([point.id for point in points])
+            all_ids.extend([point.payload["id_image"] for point in points])
             if offset is None:
                 break
 

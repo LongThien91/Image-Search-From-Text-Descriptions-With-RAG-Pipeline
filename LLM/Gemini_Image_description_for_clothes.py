@@ -1,13 +1,8 @@
 import base64
-import re
-from typing import Optional
 from PIL import Image
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
 from LLM.api_list_manager import APIKeyManager
-import os
-from dotenv import load_dotenv
-
 
 class CheckImageDescriber:
 
