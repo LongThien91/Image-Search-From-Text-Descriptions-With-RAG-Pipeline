@@ -66,3 +66,31 @@ def add_img_to_collection(img_path, collection_name):
         print(f"✅ Đã thêm image description vào collection '{collection_name}' và cloudinary thành công!")
     except Exception as e:
         print(f"add image to collection fail: {e}")
+
+def add_img_to_collection_with_description(img_path, collection_name,description):
+    try:
+        des_list= description.split('---')
+        vector_hlembedding=[]
+        print("Có" ,len(des_list) , "Vật thể ở trong ảnh")
+        for i in range(0,len(des_list)):
+            print(des_list[i])
+            vector_hlembedding.append(embedding(des_list[i]) )
+        new_image_name = str(uuid.uuid4()) #generate id for each image
+        points = [
+        models.PointStruct(
+            id=str(uuid.uuid4()),
+            payload={"image_description": image_description,"id_image":new_image_name,} ,
+            vector=vector_hlembedding[idx],
+        )
+        for idx,image_description in enumerate(des_list)
+    ]
+        client = QdrantClient(url=qdrant_url, api_key=qdrant_apikey)
+        client.upsert(collection_name=collection_name, points=points)
+        cloudinary.uploader.upload(
+            img_path,
+            public_id=new_image_name,
+        )
+        
+        print(f"✅ Đã thêm image description vào collection '{collection_name}' và cloudinary thành công!")
+    except Exception as e:
+        print(f"add image to collection fail: {e}")

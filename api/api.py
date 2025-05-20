@@ -1,10 +1,13 @@
 from fastapi import FastAPI, HTTPException, Form, File, UploadFile
 from vectorDatabase.manage_collection import get_collection, create_collection,remove_collection,is_collection_available
-from vectorDatabase.embedding import add_img_to_collection
+from vectorDatabase.embedding import add_img_to_collection, add_img_to_collection_with_description
+from vectorDatabase.vector_search import top_image_description,top_image_by_llm
+from ImageDatabase.cloudinary_image import get_image_url
 import os
 import shutil
 import os, zipfile, uuid
-import asyncio
+import json
+import requests
 
 # 1. Khởi tạo ứng dụng FastAPI
 app = FastAPI()
@@ -26,6 +29,15 @@ async def get_collections():
  
 @app.post("/create_collections") 
 async def create_collections(collection_name: str = Form(...)):
+    """
+    Tạo một collection mới trong Qdrant DB.
+
+    Args:
+        request (CollectionRequest): Yêu cầu tạo collection, bao gồm tên collection.
+
+    Returns:
+        dict: Thông báo thành công hoặc lỗi.
+    """
     try:
         create_collection(collection_name)
         print(collection_name)
@@ -70,6 +82,37 @@ async def add_by_file(collection_name: str = Form(...), file: UploadFile = File(
         print(f"Error saving file: {e}")
         raise HTTPException(status_code=500, detail="Could not save file.")
 
+@app.post("/add_by_file_with_description")
+async def add_by_file_with_description(collection_name: str = Form(...), file: UploadFile = File(...),description: str = Form(...)):
+    """
+    Lưu ý, khi đưa ảnh có 2 vật thể trở lên, hãy phân tách phần mô tả của từng vật thể bằng dấu:---
+
+    
+    Ví dụ: Áo sơ mi ngắn tay có màu trắng, bên vai phải in huy hiệu J97 --- Quần âu màu đen kẻ sọc, chất liệu bằng vải
+    """
+    if is_collection_available(collection_name)==0:
+        return f"Collection {collection_name} is not available"
+    UPLOAD_DIR = "uploads"
+    if os.path.exists(UPLOAD_DIR):
+        shutil.rmtree(UPLOAD_DIR)
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    destination_path = os.path.join(UPLOAD_DIR, file.filename)
+    try:
+        if not destination_path.lower().endswith(('.jpg', '.jpeg', '.png','.webp')):
+            raise ValueError("Unsupported file format. Only .jpg, .jpeg, .png, .webp are allowed.")
+        
+        with open(destination_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        add_img_to_collection_with_description(destination_path,collection_name, description)
+        print(f"File saved to: {destination_path}")
+        
+        if os.path.exists(UPLOAD_DIR):
+            shutil.rmtree(UPLOAD_DIR)
+        return  {f"File saved successfully"}
+    except Exception as e:
+        print(f"Error saving file: {e}")
+        raise HTTPException(status_code=500, detail="Could not save file.")
 
 @app.post("/add_by_zip")
 async def add_by_zip(collection_name: str = Form(...), zip_file: UploadFile = File(...)):
@@ -120,3 +163,27 @@ async def add_by_zip(collection_name: str = Form(...), zip_file: UploadFile = Fi
     finally:
         if os.path.exists(TEMP_EXTRACT_DIR):
             shutil.rmtree(TEMP_EXTRACT_DIR)
+
+@app.post("/get_matching_image")
+async def get_matching_image(collection_name: str = Form(...), query: str = Form(...)):
+
+    try:
+        results=top_image_description(query,collection_name,20)
+        query_list=[]
+        for result in results:
+            print(result.payload["image_description"])
+            query_list.append(result.payload["image_description"])
+        query_list_to_prompt= top_image_by_llm(query,query_list,5)
+        lst = json.loads(query_list_to_prompt) 
+        url_list=[]
+        for i in lst:
+            result=results[int(i)]
+            print(result.payload["image_description"])
+            uuid = (result.payload["id_image"])
+            url = get_image_url(uuid)
+            url_list.append(url)  
+        if len(url_list)==0:
+            return "their is no result match at all"
+        return url_list
+    except Exception as e:
+        print(f"Error to get matching image url: {e}")
