@@ -180,7 +180,7 @@ async def get_matching_image(collection_name: str = Form(...), query: str = Form
             result=results[int(i)]
             print(result.payload["image_description"])
             uuid = (result.payload["id_image"])
-            url = get_image_url(uuid)
+            url = get_image_url(uuid)+':    '+(result.payload["image_description"])+'\n'
             url_list.append(url)  
         if len(url_list)==0:
             return "their is no result match at all"
